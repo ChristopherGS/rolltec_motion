@@ -67,6 +67,46 @@ def resolve_acc_gyro(df):
     df2.drop(df2.columns[[0, 1, 2, 3, 4, 9, 10, 11, 12]], axis=1, inplace=True)
     return df2
 
+def resolve_acc_gyro_labels(df):
+    """
+    combine separate accelerometer and gyrocope rows into one row
+    note that this has changed from older data
+    """
+
+    df.drop(df.columns[[0, 1, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 22]], axis=1, inplace=True)
+    df['timestamp'] = df['timestamp'].apply(lambda x: parser.parse(x))
+    # we will try merging the data based on timestamp, but we need to be forgiving to allow for small differences, 
+    # so we round the microseconds
+    df['timestamp'] = df['timestamp'].apply(lambda x: format_time(x))
+    df_accel = df[df['SENSOR_TYPE'] == 'Accelerometer'].copy()
+
+    df_accel['ACCEL_X'] = df_accel['X_AXIS']
+    df_accel['ACCEL_Y'] = df_accel['Y_AXIS']
+    df_accel['ACCEL_Z'] = df_accel['Z_AXIS']
+    df_accel['state'] = df_accel['state']
+    df_gyro = df[df['SENSOR_TYPE'] == 'Gyro'].copy()
+    df_gyro['GYRO_X'] = df_gyro['X_AXIS']
+    df_gyro['GYRO_Y'] = df_gyro['Y_AXIS']
+    df_gyro['GYRO_Z'] = df_gyro['Z_AXIS']
+    df_gyro['state'] = df_gyro['state']
+
+    df2 = pd.merge(df_accel, df_gyro, how='outer', on=['Time_since_start'])
+
+    # having done the merge, mark as NaN any rows which do not have *both* accelerometer and gyro data
+
+    df2.replace(r'\s+', np.nan, regex=True)
+    df2.drop(df2.columns[[0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 15]], axis=1, inplace=True)
+
+    # we need to stack the accel adn gyro columns
+    df2['state_x'].append(df2['state_y'])
+    df2['state'] = df2['state_x']
+    df2.drop(['state_x', 'state_y'], axis=1)
+
+
+    print df2
+    print df2.columns
+    return df2
+
 
 def combine_csv(directory_description):
     """concatenate multiple csv files into one pandas dataframe"""

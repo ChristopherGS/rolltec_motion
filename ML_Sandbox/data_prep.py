@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from manage_state import set_state, set_stand_state
-from utilities import combine_csv, concat_data, blank_filter, resolve_acc_gyro
+from utilities import combine_csv, concat_data, blank_filter, resolve_acc_gyro, resolve_acc_gyro_labels
 from rolltec_features import create_features
 
 def combine_state_features(directory, state, window=40, stand=0):
@@ -53,7 +53,7 @@ def prep(window=40):
     training_data = blank_filter(training_data)
     return training_data
     
-def prep_test(test_file):
+def prep_test(test_file, real_test=False):
     """ prepares test data to check for algorithm accuracy
     so does not set the state
     """
@@ -61,8 +61,13 @@ def prep_test(test_file):
     el_file = 'data/test_cases/' + test_file
     df = pd.DataFrame()
     df = pd.read_csv(el_file, index_col=None, header=0)
-    df = resolve_acc_gyro(df)
-    df = create_features(df, _window=40, test=True)
+
+    if real_test == True:
+        df = resolve_acc_gyro_labels(df)
+    else:
+        df = resolve_acc_gyro(df)
+
+    df = create_features(df, _window=40, test=True, label_test=real_test)
     test_data = blank_filter(df)
 
     return test_data

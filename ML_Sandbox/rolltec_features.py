@@ -39,7 +39,7 @@ def magnitude(x, y, z):
     magnitude = x + y + z
     return magnitude
 
-def create_features(df, _window=50, test=False):
+def create_features(df, _window=40, test=False, label_test=False):
     """builds the data features, then applies
     overlapping logic
     """
@@ -58,6 +58,10 @@ def create_features(df, _window=50, test=False):
     # capture tilt here, then average later  
     df2['tiltx'] = df.apply(lambda x: tiltx(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
     df2['tilty'] = df.apply(lambda x: tilty(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
+
+    # If it is a labelled data set, we will keep the state info
+    if label_test == True:
+        df2['state'] = df['state'].astype(int)
     
     # Capture stand state here, then average later
     if (test==False):
@@ -101,24 +105,26 @@ def create_features(df, _window=50, test=False):
     ol_upper = _window/2
     ol_lower = ol_upper-1
     
+    print "df2 length: {}".format(len(df2))
     # 50% overlap of the windows - very important
-    new_df = df2[ol_lower::ol_upper] 
+    # sliding_df = df2[ol_lower::ol_upper].copy() 
+    print "sliding df length: {}".format(len(df2))
     
-    new_df['max_min_x'] = df2.apply(lambda x: max_min_diff(x['rolling_max_x'], x['rolling_min_x']), axis=1)
-    new_df['max_min_y'] = df2.apply(lambda x: max_min_diff(x['rolling_max_y'], x['rolling_min_y']), axis=1)
-    new_df['max_min_z'] = df2.apply(lambda x: max_min_diff(x['rolling_max_z'], x['rolling_min_z']), axis=1)
-    new_df['max_min_gx'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gx'], x['rolling_min_gx']), axis=1)
-    new_df['max_min_gy'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gy'], x['rolling_min_gy']), axis=1)
-    new_df['max_min_gz'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gz'], x['rolling_min_gz']), axis=1)
+    df2['max_min_x'] = df2.apply(lambda x: max_min_diff(x['rolling_max_x'], x['rolling_min_x']), axis=1)
+    df2['max_min_y'] = df2.apply(lambda x: max_min_diff(x['rolling_max_y'], x['rolling_min_y']), axis=1)
+    df2['max_min_z'] = df2.apply(lambda x: max_min_diff(x['rolling_max_z'], x['rolling_min_z']), axis=1)
+    df2['max_min_gx'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gx'], x['rolling_min_gx']), axis=1)
+    df2['max_min_gy'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gy'], x['rolling_min_gy']), axis=1)
+    df2['max_min_gz'] = df2.apply(lambda x: max_min_diff(x['rolling_max_gz'], x['rolling_min_gz']), axis=1)
                                                                        
-    new_df['acc_rss'] = df2.apply(lambda x: root_sum_square(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
-    new_df['gyro_rss'] = df2.apply(lambda x: root_sum_square(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
+    df2['acc_rss'] = df2.apply(lambda x: root_sum_square(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
+    df2['gyro_rss'] = df2.apply(lambda x: root_sum_square(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
     
-    new_df['acc_rms'] = df2.apply(lambda x: root_mean_square(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
-    new_df['gyro_rms'] = df2.apply(lambda x: root_mean_square(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
+    df2['acc_rms'] = df2.apply(lambda x: root_mean_square(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
+    df2['gyro_rms'] = df2.apply(lambda x: root_mean_square(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
     
-    new_df['acc_magnitude'] = df2.apply(lambda x: magnitude(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
-    new_df['gyro_magnitude'] = df2.apply(lambda x: magnitude(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
+    df2['acc_magnitude'] = df2.apply(lambda x: magnitude(x['ACCEL_X'], x['ACCEL_Y'], x['ACCEL_Z']), axis=1)
+    df2['gyro_magnitude'] = df2.apply(lambda x: magnitude(x['GYRO_X'], x['GYRO_Y'], x['GYRO_Z']), axis=1)
         
-    return new_df
+    return df2
     
