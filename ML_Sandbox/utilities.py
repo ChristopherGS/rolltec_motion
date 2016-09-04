@@ -100,11 +100,8 @@ def resolve_acc_gyro_labels(df):
     # we need to stack the accel adn gyro columns
     df2['state_x'].append(df2['state_y'])
     df2['state'] = df2['state_x']
-    df2.drop(['state_x', 'state_y'], axis=1)
+    df2 = df2.drop(['state_x', 'state_y'], axis=1)
 
-
-    print df2
-    print df2.columns
     return df2
 
 
@@ -117,6 +114,7 @@ def combine_csv(directory_description):
     for file_ in allFiles:
         df = pd.read_csv(file_, index_col=None, header=0)
         df = resolve_acc_gyro(df)
+        df.to_csv('regular.csv')
         list_.append(df)
     df = pd.concat(list_)
     complete_df = df.reset_index()

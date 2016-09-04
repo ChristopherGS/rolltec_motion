@@ -215,22 +215,30 @@ def hmm_comparison(df_train, df_test, label_test=False):
     """check different classifier accuracy, rank features"""
 
     y = df_train['state'].values
-    X = df_train.drop(['state', 'index'], axis=1)
+    X = df_train.drop(['state', 'index', 'stand', 'avg_stand'], axis=1)
+    
+    
     
     if X.isnull().values.any() == False: 
-        X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.3)     
+        X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.8)
+        rf = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
+                max_depth=None, max_features='auto', max_leaf_nodes=None,
+                min_samples_leaf=8, min_samples_split=4,
+                min_weight_fraction_leaf=0.0, n_estimators=500, n_jobs=-1,
+                oob_score=False, random_state=None, verbose=0,
+                warm_start=False)
     else: 
         print "Abort: Found NaN values"
 
     rf.fit(X_train, y_train)
     df_test_ready = df_test
-    df_test_ready.drop(['state'])
+    df_test_ready = df_test_ready.drop(['state'], axis=1)
     rf_prediction = rf.predict(df_test_ready)
     rf_scores = cross_validation.cross_val_score(rf, X, df_train.state, cv=10, scoring='accuracy')
     
 
     # report on the accuracy
-    print 'Random Forest prediction accuracy this time: {}'.format(accuracy_score(y_test, rf_prediction))
+    print 'Random Forest prediction accuracy this time: {}'.format(accuracy_score(df_test['state'], rf_prediction))
     print('Random Forest general accuracy: %0.2f (+/- %0.2f)' % (rf_scores.mean(), rf_scores.std() * 2))
     # Enhance with the HMM
 
@@ -242,8 +250,6 @@ def hmm_comparison(df_train, df_test, label_test=False):
     model.startprob_ = HMM_START_MATRIX
     model.transmat_ = HMM_TRANSITION_MATRIX
     model.emissionprob_ = HMM_EMISSION_MATRIX
-    print "rf prediction values: {}".format(rf_prediction)
-    print "rf prediction type: {}".format(type(rf_prediction))
     observations = np.array(rf_prediction)
     n_samples = len(observations)
     hmm_input_data = observations.reshape((n_samples, -1))
@@ -252,26 +258,17 @@ def hmm_comparison(df_train, df_test, label_test=False):
     # NOW THE COMPARISON
     print "COMPARISON"
     print 'HMM final result: {}'.format(hmm_result[1])
-    print 'HMM length: {}'.format(len(hmm_result[1]))
     print "RF prediction result: {}".format(rf_prediction)
-    print 'RF length: {}'.format(len(rf_prediction)) 
-    print "Actual states length: {}".format(len(df_train['state'].values))
-    print "y test values: {}".format(y_test)
-    print "Actual y test states length: {}".format(len(y_test))
+    print "y test values: {}".format(df_test['state'].values)
 
-    rf_comparison_accuracy = 1 - (np.mean(rf_prediction != df_test['state']))
-    hmm_comparison_accuracy = 1 - (np.mean(hmm_result[1] != df_test['state']))
-
+    rf_comparison_accuracy = 1 - np.mean(rf_prediction != df_test['state'])
+    hmm_comparison_accuracy = 1 - np.mean(hmm_result[1] != df_test['state'])
+    
+    print (rf_prediction != df_test['state']).sum()/float(rf_prediction.size)
     print "RF accuracy: {}".format(rf_comparison_accuracy)
     print "HMM accuracy: {}".format(hmm_comparison_accuracy)
 
-    # best of 10 code
-    """
-    i = 10
-    while(i > 0):
-        hmm_result = model.decode(hmm_input_data, algorithm='viterbi')
-    """
-    return hmm_result
+    return hmm_result, rf_prediction
 
 
 

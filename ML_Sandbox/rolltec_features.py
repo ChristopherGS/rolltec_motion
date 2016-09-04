@@ -102,12 +102,12 @@ def create_features(df, _window=40, test=False, label_test=False):
         # round standing up as we need it to be either '0' or '1' for training later
         df2['avg_stand'] = df2['avg_stand'].apply(lambda x: math.ceil(x))
 
-    ol_upper = _window/2
-    ol_lower = ol_upper-1
-    
+    ol_upper = _window/2 
+    ol_lower = ol_upper-1 
     print "df2 length: {}".format(len(df2))
     # 50% overlap of the windows - very important
-    # sliding_df = df2[ol_lower::ol_upper].copy() 
+    # df2[19::20]
+    df2 = df2[ol_lower::ol_upper].copy() 
     print "sliding df length: {}".format(len(df2))
     
     df2['max_min_x'] = df2.apply(lambda x: max_min_diff(x['rolling_max_x'], x['rolling_min_x']), axis=1)
